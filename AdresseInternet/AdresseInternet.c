@@ -29,8 +29,8 @@ AdresseInternet * _AdresseInternetNew(int flag, const char* nom, uint16_t port){
     //memset remplit sizeof(struct addrinfo) octets de la zone mémoire pointé par hints
     memset(&hints, 0, sizeof(struct addrinfo));
 
-    char numport[4];
-    snprintf(numport,4,"%d", port);
+    char numport[8];
+    snprintf(numport,8,"%d", port);
     struct addrinfo *result;
     int r = getaddrinfo(nom, numport, &hints, &result);
     //Si r est différent de 0, une erreur est survenue das getaddrinfo
@@ -122,3 +122,128 @@ int AdresseInternet_getinfo(AdresseInternet *adresse, char *nomDNS, int tailleDN
     printf("getinfo c'est bien déroulé! \n");
     return 0;
 }
+
+int AdresseInternet_getIP(const AdresseInternet *adresse, char *IP, int tailleIP){
+    //On regarde si l'adresse est IPV4 ou IPV6
+    if(adresse->sockAddr.ss_family == AF_INET){
+        struct sockaddr_in *addr = (struct sockaddr_in *) &adresse->sockAddr;
+        //on a récupéré une adresse ip en forme binaire, on va utiliser la fonction inet_ntop.
+        // inet_ntop  -  Convertir des adresses IPv4 et IPv6 sous forme binaire en forme texte
+        if (inet_ntop(AF_INET, &(addr->sin_addr.s_addr), IP, tailleIP) == NULL){
+            fprintf(stderr, "Erreur dans inet_ntop! \n");
+            return -1;
+        }
+        else{
+            return 0;
+        }
+    }
+    else if(adresse->sockAddr.ss_family == AF_INET6){
+        struct sockaddr_in6 *addr = (struct sockaddr_in6 *) &adresse->sockAddr;
+        if (inet_ntop(AF_INET6, addr->sin6_addr.s6_addr, IP, tailleIP) == NULL){
+            fprintf(stderr, "Erreur dans inet_notp \n");
+            return -1;
+        }
+        else {
+            return 0;
+        }
+    }
+    else{
+        printf("Erreur dans AdresseInternet_getIP! \n");
+        return -1;
+    }
+}
+
+//Note: le sujet demande a ce que la fonction renvoie 0 en cas d'erreur
+uint16_t AdresseInternet_getPort(const AdresseInternet *adresse) {
+    if(adresse->sockAddr.ss_family == AF_INET) {
+        struct sockaddr_in *addr = (struct sockaddr_in *) &adresse->sockAddr;
+        //MAN La fonction ntohs() convertit un entier court non signé netshort depuis
+        //l’ordre des octets du réseau vers celui de l’hôte.
+        return ntohs(addr->sin_port);
+    }
+    else if(adresse->sockAddr.ss_family == AF_INET6) {
+        struct sockaddr_in6 *addr = (struct sockaddr_in6 *) &adresse->sockAddr;
+        return ntohs(addr->sin6_port);
+    }
+    else{
+        printf("Erreur dans AdresseInternet_getPort! L'adresse est t'elle initialisée? \n");
+        return 0;
+        }
+}
+
+int AdresseInternet_getDomain(const AdresseInternet *adresse){
+    if(adresse->sockAddr.ss_family == AF_INET) {
+        return  adresse->sockAddr.ss_family;
+    }
+    else if(adresse->sockAddr.ss_family == AF_INET6) {
+        return adresse->sockAddr.ss_family;
+    }
+    else {
+        printf("Erreur dans AdresseInternet_getDomain \n");
+        return -1;
+    }
+}
+
+int sockaddr_to_AdresseInternet(const struct sockaddr *addr, AdresseInternet *adresse){
+    memcpy(&(adresse->sockAddr), addr, sizeof(*addr));
+        adresse->nom[0] = 0;
+        adresse->service[0] = 0;
+        return 0;
+}
+
+int AdresseInternet_to_sockaddr(const AdresseInternet *adresse, struct sockaddr *addr){
+    if(adresse->sockAddr.ss_family == AF_INET){
+        memcpy(addr, &(adresse->sockAddr), sizeof(struct sockaddr_in));
+        return 0;
+    }
+    else if(adresse->sockAddr.ss_family == AF_INET6){
+        memcpy(addr, &(adresse->sockAddr), sizeof(struct sockaddr_in6));
+        return 0;
+    }
+    else{
+        printf("Erreur dans AdresseInternet_to_sockaddr \n");
+        return -1;
+    }
+}
+
+int AdresseInternet_compare(const AdresseInternet *adresse1, const AdresseInternet *adresse2){
+    char IPAdresse1[20]; //Taille 20 car une adresse ip est de la forme 'ddd.ddd.ddd.ddd', il faut prendre une taille plus
+                    //grande
+    char IPAdresse2[20];
+    if(AdresseInternet_getIP(adresse1, IPAdresse1, 20) == -1){
+        return -1;
+    }
+    if(AdresseInternet_getIP(adresse2, IPAdresse2, 20) == -1){
+        return -1;
+    }
+    if(strcmp(IPAdresse1, IPAdresse2) != 0){
+        //Les adresses ip sont différentes, ont retourne 0
+        return 0;
+    }
+    //Les adresses ip sont identiques, on vérifie le port
+    uint16_t portAdresse1 = AdresseInternet_getPort(adresse1);
+
+    //On vérifie que le numéro de port est tout de même correcte
+    if (portAdresse1 == 0){
+        return -1;
+    }
+    uint16_t portAdresse2 = AdresseInternet_getPort(adresse2);
+    if (portAdresse2 == 0){
+        return -1;
+    }
+    if (portAdresse1 == portAdresse2){
+        //Si l'on arrive ici, c'est que les port sont identiques
+        return 1;
+    }
+    return 0;
+}
+
+int AdresseInternet_copy(AdresseInternet *adrdst, const AdresseInternet *adrsrc){
+    if (memcpy(adrdst, adrsrc, sizeof(AdresseInternet))==NULL){
+        printf("Erreur memcpy dans AdresseInternet_copy \n");
+        return -1;
+    }
+    return 0;
+}
+
+

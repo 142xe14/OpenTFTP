@@ -31,4 +31,29 @@ AdresseInternet * AdresseInternet_loopback(uint16_t port);
 
 int AdresseInternet_getinfo(AdresseInternet *adresse, char *nomDNS, int tailleDNS, char *nomPort,
                                             int taillePort);
+
+/**Extrait d'une adresse internet l'adrese IP correspondante sous forme de chaine de caractères*/
+int AdresseInternet_getIP(const AdresseInternet *adresse, char *IP, int tailleIP);
+
+/**Extrait d'une adresse le numéro de port*/
+uint16_t AdresseInternet_getPort(const AdresseInternet *adresse);
+
+/**Rend le domaine de communication de l'adresse passé en paramètre (AF_INET ou AF_INET6)*/
+int AdresseInternet_getDomain(const AdresseInternet *adresse);
+
+/**Construit une adresse internet à partir d'une structure sockaddr. La structure addr doit être suffisament grande
+ * pour acceuillir l'adresse*/
+int sockaddr_to_AdresseInternet(const struct sockaddr *addr, AdresseInternet *adresse);
+
+/**Opposé fonction précédente*/
+int AdresseInternet_to_sockaddr(const AdresseInternet *adresse, struct sockaddr *addr);
+
+/**Compare deux adresse internet
+ * Retourne 0 si différente
+ * 1 si identique
+ * -1 si erreur*/
+int AdresseInternet_compare(const AdresseInternet *adresse1, const AdresseInternet *adresse2);
+
+/**Cette fonctio n copie l'adresse internet adrsc dans la variable pointé par adrdst*/
+int AdresseInternet_copy(AdresseInternet *adrdst, const AdresseInternet *adrsrc);
 #endif //OPENTFTP_ADRESSEINTERNET_H
