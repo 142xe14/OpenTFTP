@@ -5,6 +5,9 @@
 #ifndef ADRESSEINTERNET_H
 #define ADRESSEINTERNET_H
 
+#include <stdint.h>
+
+#include "AdresseInternetType.h"
 
 /**La fonction ci-dessous construit une adresse internet à partir d'une éventuelle adresse(sous forme DNS ou IP) et d'un
  * numéro de port
@@ -23,4 +26,9 @@ AdresseInternet * AdresseInternet_any(uint16_t port);
  */
 
 AdresseInternet * AdresseInternet_loopback(uint16_t port);
+
+/**La fonction AdresseInternet_getinfo extrait d'une adresse internet l'adresse réseau et transport correspondants*/
+
+int AdresseInternet_getinfo(AdresseInternet *adresse, char *nomDNS, int tailleDNS, char *nomPort,
+                                            int taillePort);
 #endif //OPENTFTP_ADRESSEINTERNET_H

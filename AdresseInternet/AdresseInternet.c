@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "AdresseInternet.h"
 
@@ -34,7 +35,7 @@ AdresseInternet * _AdresseInternetNew(int flag, const char* nom, uint16_t port){
     int r = getaddrinfo(nom, numport, &hints, &result);
     //Si r est différent de 0, une erreur est survenue das getaddrinfo
     if(r != 0){
-        fprintf(stderr, "getaddrinfo: %s\n");
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(r));
         return NULL;
     }
 
@@ -49,7 +50,7 @@ AdresseInternet * _AdresseInternetNew(int flag, const char* nom, uint16_t port){
     adresse->service[0] = 0;
     memcpy(&(adresse->sockAddr), result->ai_addr, result->ai_addrlen);
     freeaddrinfo(result);
-    fprintf("Adresse correctement crée");
+    printf("Adresse correctement crée et libéré");
     return adresse;
 }
 
@@ -69,4 +70,55 @@ AdresseInternet * AdresseInternet_loopback(uint16_t port){
 
 void AdresseInternet_free(AdresseInternet *adresse){
     free(adresse);
+}
+
+int AdresseInternet_getinfo(AdresseInternet *adresse, char *nomDNS, int tailleDNS, char *nomPort,
+                            int taillePort){
+    char *adresseNomDNS;
+    char *adresseNomPort;
+    //Dans un premier temps, on regarde si le nom DNS n'est pas déjà présent dans la structure
+    if (adresse->nom[0] != 0){
+        //On copie le nom de la structure dans nomDNS
+        strncpy(nomDNS, adresse->nom, tailleDNS);
+        //L'énoncé demande à ce que nomDNS ce termine par un 0
+        //Comme strncpy a copié adresse->nom avec le caractère d'échappement à la fin, on remplace le caractère à
+        //tailleDNS - 1 par 0
+        nomDNS[tailleDNS - 1] = 0;
+        adresseNomDNS = NULL;
+    }
+    else{
+        adresseNomDNS = nomDNS;
+    }
+    //On regarde ensuite si le nom du Port est présent dans la structure
+    if(adresse->service[0] != 0){
+        //On copie le nom du port dans nomPort
+        strncpy(nomPort, adresse->service, taillePort);
+        //L'énoncé demande à ce que nomPort ce termine par un 0
+        //Comme strncpy a copié adresse->service avec le caractère d'échappement à la fin, on remplace le caractère à
+        //taillePort - 1 par 0
+        nomPort[taillePort - 1] = 0;
+        adresseNomPort = NULL;
+    }
+    else{
+        adresseNomPort = nomPort;
+    }
+    //Si la condition ci-dessous est vrai cela indique que :
+    //La structure adresse n'avais pas de nom et de service
+    //Le nom et le service n'ont pas été passé en paramètre
+    if(adresseNomDNS == NULL && adresseNomPort == NULL){
+        printf("Une erreur est survenue dans AdresseInternet_getinfo()\n");
+        return -1;
+    }
+
+    //getnameinfo, fonction opposé de getaddrinfo
+    if(getnameinfo((struct sockaddr *)&adresse->sockAddr, sizeof(adresse->sockAddr), adresseNomDNS, tailleDNS,
+                            adresseNomPort, taillePort, 0) != 0){
+        fprintf(stderr, "Erreur survenue dans getnameinfo\n");
+        return - 1;
+    }
+    //On va rentrer les valeurs trouver par getnameinfo dans notre structure adresse
+    strncpy(adresse->nom, adresseNomDNS, tailleDNS);
+    strncpy(adresseNomPort, adresseNomPort, taillePort);
+    printf("getinfo c'est bien déroulé! \n");
+    return 0;
 }
