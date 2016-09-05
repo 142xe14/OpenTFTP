@@ -82,3 +82,99 @@ int getLocalName(SocketUDP *sock, char *buffer, int taille){
     strncpy(buffer, nom, (size_t) taille);
     return strlen(buffer);
 }
+
+int getLocalIP(const SocketUDP *sock, char *localIP, int tailleIP){
+    char ip[16]; //IP = 15 caractères + echappement
+    if(AdresseInternet_getIP(sock->addr,ip, sizeof(tailleIP)) == 0){
+        strncpy(localIP, ip, tailleIP);
+        return strlen(localIP);
+    }
+    else{
+        return -1;
+    }
+}
+
+uint16_t getLocalPort(const SocketUDP *sock){
+    return AdresseInternet_getPort(sock->addr);
+}
+
+ssize_t writeToSocketUDP(SocketUDP *sock, const AdresseInternet *adresse, const char *buffer, int length){
+    //On va controler que l'on a bien tous les paramètres de la fonction
+    if (sock == NULL || adresse == NULL || buffer == NULL) {
+        printf("Erreur, sock || adresse || buffer égal à null\n");
+        return -1;
+    }
+
+    struct sockaddr_storage ss;
+    if (AdresseInternet_to_sockaddr(adresse, (struct sockaddr *) &ss) != 0) {
+        return -1;
+    }
+    socklen_t ss_len;
+    //On controle pour savoir si l'adresse est IPV4 ou 6
+    if (ss.ss_family == AF_INET6) {
+        ss_len = sizeof(struct sockaddr_in6);
+    } else {
+        ss_len = sizeof(struct sockaddr);
+    }
+
+    ssize_t send = sendto(sock->sockfd, buffer, (size_t) length, 0, (struct sockaddr *) &ss,ss_len);
+
+    //On controle la valeur de send pour vérifier que le sendto c'est bien passé
+    if (send == -1){
+        printf("Erreur dans sendto de write_socketuUDP! \n");
+        return -1;
+    }
+    else{
+        return send;
+    }
+}
+
+ssize_t recvFromSocketUDP(SocketUDP *sock, char *buffer, int length, AdresseInternet *adresse, int timeout){
+    //On vérifie d'abords que les arguments sont valides
+    if (sock == NULL || buffer == NULL) {
+        printf("Argument invalide pour recvFromSocketUDP, sock || buffer égal à NULL.\n");
+        return -1;
+    }
+
+    struct sockaddr_storage ss;
+    memset(&ss, 0, sizeof(ss));
+    socklen_t ss_len = sizeof(ss);
+
+    if (timeout > 0) {
+        struct sigaction act;
+        act.sa_handler = handleAlarm;
+        act.sa_flags = 0;
+        if (sigemptyset(&act.sa_mask) != 0) {
+            printf("Erreur dans recvFromSocketUDP, sigemptyset n'est pas valide.\n");
+            return -1;
+        }
+        if (sigaction(SIGALRM, &act, NULL) != 0) {
+            printf("Erreur dans recvFromSocketUDP, sigaction n'est pas valide.\n");
+            return -1;
+        }
+        alarm(timeout);
+    }
+    ssize_t receive = recvfrom(sock->sockfd, buffer, length, 0, (struct sockaddr *) &ss, &ss_len);
+    if (timeout > 0) {
+        alarm(0);
+    }
+    if (adresse != NULL) {
+        sockaddr_to_AdresseInternet((struct sockaddr *) &ss, adresse);
+    }
+    return receive;
+}
+
+void handleAlarm(int sig){
+    if (sig == SIGALRM) {
+    }
+}
+
+int closeSocketUDP(SocketUDP *sock){
+    if (close(sock->sockfd) != 0) {
+        printf("Une erreur est survenue, la socket n'a pas pu être fermée correctement! \n");
+        return -1;
+    }
+    else {
+        return 0;
+    }
+}
