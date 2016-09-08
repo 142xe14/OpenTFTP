@@ -55,7 +55,7 @@ extern char *errors[];
 int tftp_make_ack(char *buffer, size_t *length, uint16_t block);
 
 /**Fonction permettant l'envoie d'une requete*/
-int tftp_make_rrq(char *buffer, size_t *length, char *fichier);
+int tftp_make_rrq(char *buffer, size_t *length, const char *fichier);
 
 /**Fonction pour l'envoie de packet Data*/
 int tftp_make_data(char *buffer, size_t *length, uint16_t block, const char *data, size_t n);
@@ -64,7 +64,7 @@ int tftp_make_data(char *buffer, size_t *length, uint16_t block, const char *dat
 int tftp_make_error(char *buffer, size_t *length, uint16_t errorcode, const char *message);
 
 /**fonction qui envoie un message d'erreur à l'adresse dst*/
-void tftp_send_error(SocketUDP *sock, const AdresseInternet *dst, uint16_t code, const char *msg);
+int tftp_send_error(SocketUDP *sock, const AdresseInternet *dst, uint16_t code, const char *msg);
 
 /**Envoie un demande de connexion RRQ pour lire le fichier sur la socket sock à l'adresse dst. La fonction place
  * en attente de réponse au plus TIMEOUT secondes. Si elle reçoit une réponse valide (de type DATA 1), l'adresse de
@@ -78,4 +78,12 @@ int tftp_send_RRQ_wait_DATA_with_timeout(SocketUDP *sock, const AdresseInternet 
 int tftp_send_RRQ_wait_DATA(SocketUDP *sock, const AdresseInternet *dst, const char *fichier,
                                          AdresseInternet *connexion, char *reponse, size_t *replength);
 
+/**Envoie un packet de taille paquetlen de type DATA à l'adresse dst et attend de recevoir en réponse depuis dst un
+ * paquet de type ACK correspondant. Les paquets ACK reçus de numéro de blocs inférieur sont ignorés, tous les autres
+ * paquets reçus génèrent l'envoi d'un paquet d'erreur. Si le paquet attendu n'est pas reçu au bout ded TIMEOUT, le
+ * paquet DATA est renvoyé (au plus MAX_TRIES)*/
+int tftp_send_DATA_wait_ACK(SocketUDP *sock, const AdresseInternet *dst, const char *paquet, size_t paquetlen);
+
+int tftp_send_ACK_wait_DATA(SocketUDP *sock, const AdresseInternet *dst, const char *paquet, size_t paquetlen,
+                            char *res, size_t *reslen);
 #endif //OPENTFTP_TFTP_H
