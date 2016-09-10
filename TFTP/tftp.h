@@ -86,4 +86,24 @@ int tftp_send_DATA_wait_ACK(SocketUDP *sock, const AdresseInternet *dst, const c
 
 int tftp_send_ACK_wait_DATA(SocketUDP *sock, const AdresseInternet *dst, const char *paquet, size_t paquetlen,
                             char *res, size_t *reslen);
+
+int tftp_send_last_ACK(SocketUDP *sock, const AdresseInternet *dst, const char *paquet, size_t paquetlen);
+
+/**Part 2*/
+
+/**Fonction qui créer un paquet tftp rrq_opt et met à jour length avec la taille des données écrites*/
+int tftp_make_rrq_opt(char *buffer, size_t *length, const char *fichier, size_t noctets, size_t nblocs);
+
+/**Fonction qui créer un paquet tftp oack et met à jour length avec la taille des données écrites*/
+int tftp_make_oack(char *buffer, size_t *length, uint16_t bloc, size_t noctets, size_t nblocs);
+
+/**Envoie un pacquet oack*/
+int tftp_send_oack(SocketUDP *sock, const AdresseInternet *dst, char *paquet, size_t paquetlen);
+
+int tftp_send_RRQ_wait_OACK(SocketUDP *sock, const AdresseInternet *dst, AdresseInternet *from, char *paquet,
+                            size_t pacquetlen, char *res, size_t *reslen);
+
+char *tftp_strerror(ssize_t errorcode);
+
+int tftp_print(char *paquet);
 #endif //OPENTFTP_TFTP_H
