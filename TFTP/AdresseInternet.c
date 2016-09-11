@@ -29,6 +29,9 @@ AdresseInternet * _AdresseInternetNew(int flag, const char* nom, uint16_t port){
     //memset remplit sizeof(struct addrinfo) octets de la zone mémoire pointé par hints
     memset(&hints, 0, sizeof(struct addrinfo));
 
+    hints.ai_flags = flag | AI_NUMERICSERV ;
+    hints.ai_family = AF_UNSPEC;
+
     char numport[8];
     snprintf(numport,8,"%d", port);
     struct addrinfo *result;
