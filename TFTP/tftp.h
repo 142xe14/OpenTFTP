@@ -95,7 +95,7 @@ int tftp_send_last_ACK(SocketUDP *sock, const AdresseInternet *dst, const char *
 int tftp_make_rrq_opt(char *buffer, size_t *length, const char *fichier, size_t noctets, size_t nblocs);
 
 /**Fonction qui créer un paquet tftp oack et met à jour length avec la taille des données écrites*/
-int tftp_make_oack(char *buffer, size_t *length, uint16_t bloc, size_t noctets, size_t nblocs);
+int tftp_make_oack(char *buffer, size_t *length, size_t noctets, size_t nblocs);
 
 /**Envoie un pacquet oack*/
 int tftp_send_oack(SocketUDP *sock, const AdresseInternet *dst, char *paquet, size_t paquetlen);

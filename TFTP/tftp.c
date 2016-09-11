@@ -326,7 +326,7 @@ int tftp_make_rrq_opt(char *buffer, size_t *length, const char *fichier, size_t 
     return 0;
 }
 
-int tftp_make_oack(char *buffer, size_t *length, uint16_t bloc, size_t noctets, size_t nblocs){
+int tftp_make_oack(char *buffer, size_t *length, size_t noctets, size_t nblocs){
     // On vérifie que les arguments passé sont correctes
     if (buffer == NULL || length == NULL) {
         return ERRARG;
@@ -623,3 +623,26 @@ int tftp_print_error(char *paquet) {
     return 0;
 }
 
+int tftp_wait_DATA_with_timeout(SocketUDP *socket, AdresseInternet *from, char *res, size_t *reslen) {
+    // On vérifie les arguments
+    if (socket == NULL || from == NULL || res == NULL || reslen == NULL) {
+        return ERRARG;
+    }
+    // On attend le paquet DATA
+    AdresseInternet con_buf;
+    char res_buf[*reslen];
+    size_t count;
+    if ((count = recvFromSocketUDP(socket, res_buf, *reslen, &con_buf, TIMEOUT)) == (size_t) -1) {
+        if (errno == ERROR) {
+            return ERRTIMO;
+        } else {
+            return ERRRECEIVE;
+        }
+    }
+    if (AdresseInternet_copy(from, &con_buf) != 0) {
+        return ERRUNKN;
+    }
+    memcpy(res, res_buf, count);
+    *reslen = count;
+    return 0;
+}
